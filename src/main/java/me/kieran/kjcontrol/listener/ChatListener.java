@@ -48,7 +48,7 @@ public class ChatListener implements Listener {
 
             All formatting logic is delegated to ConfigManager.
          */
-        event.renderer((source, _, message, _) -> ConfigManager.getChatFormat(source, message));
+        event.renderer((source, sourceDisplayName, message, audience) -> ConfigManager.getChatFormat(source, message));
     }
 
 }
