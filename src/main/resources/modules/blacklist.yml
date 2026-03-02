@@ -1,0 +1,21 @@
+# ----------------------------------------------------------------------
+# Blacklist Configuration
+# ----------------------------------------------------------------------
+
+# DO NOT CHANGE VERSION
+version: 1
+
+# The message sent to the player when their message contains a blacklisted word.
+# MUST be in MiniMessage formatting.
+cancel-message: "<red><bold>!</bold> Your message was blocked for containing inappropriate language.</red>"
+
+# If true, blocks words even if they are hidden inside other words.
+# (e.g., If "ass" is blocked, "grass" will also be blocked).
+# If false, it only blocks standalone words.
+strict-matching: false
+
+# A list of words and phrases that are not allowed in chat.
+blocked-words:
+  - "badword1"
+  - "badword2"
+  - "some blacklisted phrase"

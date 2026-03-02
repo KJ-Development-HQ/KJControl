@@ -3,70 +3,83 @@ package me.kieran.kjcontrol.util;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
-public class PluginMessagesUtil {
+/**
+ * Centralised utility for building standard plugin messages.
+ * Automatically prepends the customisable plugin prefix.
+ */
+public final class PluginMessagesUtil {
 
-    /*
-        Utility class for building commonly used plugin messages.
+    // Cached prefix component
+    private static Component prefix = Component.empty();
 
-        This centralises:
-        - Error output formatting
-        - Permission denial messages
+    // Private constructor to prevent instantiation of this static utility class
+    private PluginMessagesUtil() {}
 
-        Keeping message construction here ensures:
-        - Consistency across the plugin
-        - Easier future formatting improvements
+    /**
+     * Updates the cached prefix. Called by ConfigManager during startup/reload.
+     *
+     * @param rawPrefix The raw MiniMessage string from config.yml.
      */
+    public static void setPrefix(String rawPrefix) {
+        if (rawPrefix == null || rawPrefix.isEmpty()) {
+            prefix = Component.empty();
+        } else {
+            prefix = MiniMessage.miniMessage().deserialize(rawPrefix);
+        }
+    }
 
-    /*
-        Builds a standardised error message component
-        from an exception.
-
-        This is used to:
-        - log consistent error messages
-        - show useful debugging information
-
-        Example output:
-        "Cause: NullPointerException... Message: something was null"
+    /**
+     * Prepends the plugin prefix to a raw MiniMessage string.
+     *
+     * @param rawMessage The raw message string.
+     * @return The formatted Component.
      */
-    public static Component defaultErrorMessage(Exception e) {
+    public static Component format(String rawMessage) {
+        return prefix.append(MiniMessage.miniMessage().deserialize(rawMessage));
+    }
 
-        /*
-            Use getSimpleName() to avoid printing the full
-            package path of the exception class.
-         */
-        String cause = e.getClass().getSimpleName();
-
-        /*
-            Exception#getMessage() can return null.
-            Guard against that to avoid ugly output.
-         */
-        String message = (e.getMessage() != null)
-                ? e.getMessage()
-                : "No additional details provided";
-
-        return Component.text("Cause: " + cause + " | Message: " + message);
+    /**
+     * Prepends the plugin prefix to an existing Component.
+     *
+     * @param message The Adventure Component.
+     * @return The formatted Component.
+     */
+    public static Component format(Component message) {
+        return prefix.append(message);
     }
 
     /*
-        Builds a formatted "no permission" message.
+        ----------------------------------------------------------------------
+        Standardized Messages
+        ----------------------------------------------------------------------
+     */
 
-        Uses MiniMessage for colour formatting.
+    /**
+     * Constructs a standardised error message component from an exception.
+     * Extracts the exception type and message for clean, readable console logging.
+     *
+     * @param e The caught exception to format.
+     * @return A {@link Component} containing the formatted error details.
+     */
+    public static Component defaultErrorMessage(Exception e) {
+        String cause = e.getClass().getSimpleName();
+        String message = (e.getMessage() != null) ? e.getMessage() : "No additional details provided";
 
+        // Utilising modern Java string formatting for clean template construction
+        return Component.text("Cause: %s | Message: %s".formatted(cause, message));
+    }
 
-        @param permissionNode The permission the player lacks.
+    /**
+     * Constructs a formatted "no permission" warning message.
+     *
+     * @param permissionNode The specific permission node the user lacks.
+     * @return A formatted MiniMessage {@link Component} ready to be sent to the user.
      */
     public static Component noPermissionMessage(String permissionNode) {
-
-        /*
-            We explicitly close colour tags to avoid
-            accidental colour bleeding into appended components.
-         */
-        return MiniMessage.miniMessage()
-                .deserialize(
-                        "<red>You do not have permission: <dark_gray>"
-                                + permissionNode
-                                + "</dark_gray></red>"
-                );
+        // Utilising string formatting to safely inject the permission node into the markup
+        String errorMessage = "<red>You do not have permission: <dark_gray>%s</dark_gray></red>"
+                .formatted(permissionNode);
+        return format(errorMessage);
     }
 
 }

@@ -3,115 +3,68 @@ package me.kieran.kjcontrol.util;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
 
+/**
+ * Utility class for constructing and formatting GUI items.
+ * Centralises ItemStack configuration to ensure consistent visual
+ * styling across all plugin menus.
+ */
 public final class MenuUtil {
 
-    /*
-        Applies a hidden enchantment to an ItemMeta
-        to produce the enchanted "glow" effect.
+    // Private constructor to prevent instantiation of utility class
+    private MenuUtil() {}
 
-        The enchantment is intentionally hidden using
-        ItemFlag.HIDE_ENCHANTS so players do not see
-        irrelevant enchantment details in the tooltip.
+    /**
+     * Generic factory method for creating standardised menu icons.
+     *
+     * @param material     The base item material.
+     * @param displayName  The formatted title shown in the tooltip.
+     * @param lore         A list of formatted description lines.
+     * @param isGlowing    Whether to apply a visual enchantment glint.
+     * @return A fully configured ItemStack ready for GUI placement.
      */
-    private static void makeGlow(ItemMeta meta) {
-        meta.addEnchant(Enchantment.SHARPNESS, 1, true);
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-    }
-
-    /*
-        Generic factory method for creating styled menu blocks.
-
-        This method centralises all ItemStack display configuration,
-        allowing menu items to be defined declaratively rather than
-        duplicating ItemMeta setup logic in multiple places.
-
-        Parameters:
-        - material    -> The base material of the item
-        - displayName -> The name shown at the top of the tooltip
-        - lore        -> The descriptive lines shown below the name
-        - isGlowing   -> Whether the item should have a visual glow
-
-        This keeps menu creation clean, reusable, and easy to extend.
-     */
-    public static ItemStack createBlock(
-            Material material, Component displayName,
-            List<Component> lore, boolean isGlowing
-    ) {
-        /*
-            Create a new ItemStack using the material param.
-
-            ItemStack.of(...) is a modern, clean way to
-            create items in recent Bukkit/Paper versions.
-         */
+    public static ItemStack createBlock(Material material, Component displayName,
+                                        List<Component> lore, boolean isGlowing) {
         ItemStack block = ItemStack.of(material);
-
-        /*
-            Retrieve the ItemMeta from the ItemStack.
-
-            ItemMeta contains all display-related data:
-            - Name
-            - Lore
-            - Enchantments
-            - Flags
-         */
         ItemMeta meta = block.getItemMeta();
 
-        /*
-            ItemMeta can technically be null for some items,
-            so we guard against that to avoid NullPointerExceptions.
-         */
         if (meta != null) {
-
-            /*
-                Set the display name shown to the player
-                when they hover over the item.
-
-                Uses Adventure Components instead of legacy strings.
-             */
             meta.displayName(displayName);
-
-            /*
-                Sets the lore (description text) under the item name.
-
-                Lore is a list of Components, each one representing
-                a line of text.
-             */
             meta.lore(lore);
 
-            /*
-                Apply a glowing visual effect if requested.
+            if (isGlowing) meta.setEnchantmentGlintOverride(true);
 
-                This does not change gameplay behaviour.
-                It simply adds a hidden enchantment so the item
-                appears enchanted (glowing) in the inventory.
-             */
-            if (isGlowing) makeGlow(meta);
-
-            /*
-                Apply the modified ItemMeta back onto the ItemStack.
-
-                Changes to ItemMeta are NOT applied automatically.
-             */
             block.setItemMeta(meta);
         }
 
-        // Return the fully-built ItemStack
         return block;
     }
 
-    /*
-        Creates the predefined "Reload KJControl" menu item.
-
-        This method delegates to createBlock(...) to keep
-        styling consistent and avoid repeating meta logic.
+    /**
+     * Creates a blank, unnamed glass pane used to fill empty GUI slots.
+     * Prevents players from placing their own items into the menu.
+     *
+     * @return A black stained-glass pane with no name.
      */
+    public static ItemStack getFillerGlass() {
+        return createBlock(
+                Material.LIGHT_GRAY_STAINED_GLASS_PANE,
+                Component.empty(),
+                List.of(),
+                false
+        );
+    }
+
+    /**
+     * ----------------------------------------------------------------------
+     * Predefined Menu Icons
+     * ----------------------------------------------------------------------
+     */
+
     public static ItemStack getReloadBlock() {
         return createBlock(
                 Material.EMERALD_BLOCK,
@@ -123,13 +76,6 @@ public final class MenuUtil {
         );
     }
 
-    /*
-        Creates the predefined "Preview Chat Format" menu item.
-
-        Like getReloadBlock(), this method defines only
-        the visual data while createBlock(...) handles
-        the actual ItemStack configuration.
-     */
     public static ItemStack getPreviewFormatBlock() {
         return createBlock(
                 Material.DIAMOND_BLOCK,

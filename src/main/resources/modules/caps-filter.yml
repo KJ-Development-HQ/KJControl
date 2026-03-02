@@ -1,0 +1,22 @@
+# ----------------------------------------------------------------------
+# Caps Filter Configuration
+# ----------------------------------------------------------------------
+
+# DO NOT CHANGE VERSION
+version: 1
+
+# The minimum length a message must be before the caps filter checks it.
+# (Prevents blocking short acronyms like "OK", "BRB", or "LOL")
+minimum-length: 5
+
+# The maximum percentage of capital letters allowed in a message (0-100).
+max-caps-percentage: 50
+
+# What happens when a message has too many caps?
+# BLOCK: Cancels the message and warns the player.
+# LOWERCASE: Silently converts the message to lowercase and sends it.
+action: "BLOCK"
+
+# The message sent to the player when their chat is blocked for excessive caps.
+# MUST be in MiniMessage formatting.
+cancel-message: "<red><bold>!</bold> Your message was blocked for having too many capital letters.</red>"

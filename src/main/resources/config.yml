@@ -1,18 +1,37 @@
 # DO NOT CHANGE VERSION
-config-version: 1
+config-version: 2
 
-# Choose whether to enable or disable each feature
+# The prefix added before plugin messages sent to players.
+# Formatting MUST be in MiniMessage.
+prefix: "<gradient:#6ad5ff:#4285eb>KJControl</gradient> <dark_grey>»<dark_grey> "
+
+# Toggle individual features and modules on or off
 features:
 
-  # chat-format.yml
+  # Formatting & UI
+  # Configure in modules/chat-format.yml
   enable-chat-format: true
 
-  # messages.yml
-  messages:
+  # Join / Quit Messages
+  # Configure in modules/messages.yml
+  enable-messages: true
 
-    # Enables all messages. If false, messages.yml will be ignored.
-    # If true, you can then enable/disable individual messages below
-    enabled: true
+  # Chat Moderation
+  # You'll find each of these in the "modules" folder.
+  moderation:
 
-    # Enables join and quit messages - configurable in messages.yml
-    enable-join-quit: true
+    # Whether messages get blocked for having too many capital letters in.
+    # Configure in modules/caps-filter.yml
+    caps-filter: true
+
+    # Whether messages get blocked for being sent too fast.
+    # Configure in modules/spam-filter.yml
+    spam-filter: true
+
+    # Whether messages get blocked for having links or ads in them.
+    # Configure in modules/link-filter.yml
+    link-filter: true
+
+    # Whether messages get blocked based on your custom blacklist.
+    # Configure in modules/blacklist.yml
+    blacklist: true
