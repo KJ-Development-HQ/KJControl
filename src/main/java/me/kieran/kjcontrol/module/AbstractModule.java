@@ -106,7 +106,14 @@ public abstract class AbstractModule implements KJModule {
             File file = new File(plugin.getDataFolder(), fileName);
 
             if (!file.exists()) {
-                file.getParentFile().mkdirs();
+                File parent = file.getParentFile();
+
+                // Safely check if the parent folder exists, and if we fail to create it, abort.
+                if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                    plugin.getComponentLogger().error("Failed to create directory for {}", fileName);
+                    return false;
+                }
+
                 plugin.saveResource(fileName, false);
             }
 
@@ -124,7 +131,7 @@ public abstract class AbstractModule implements KJModule {
 
             return onConfigLoad(config);
         } catch (Exception e) {
-            plugin.getComponentLogger().error("Failed to load " + fileName);
+            plugin.getComponentLogger().error("Failed to load {}", fileName);
             plugin.getComponentLogger().error(PluginMessagesUtil.defaultErrorMessage(e));
             return false;
         }

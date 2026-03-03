@@ -2,13 +2,8 @@ package me.kieran.kjcontrol.module.chat.format;
 
 import me.kieran.kjcontrol.core.KJControl;
 import me.kieran.kjcontrol.module.AbstractModule;
-import me.kieran.kjcontrol.module.KJModule;
 import me.kieran.kjcontrol.module.chat.ChatPipeline;
-import me.kieran.kjcontrol.util.PluginMessagesUtil;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import java.io.File;
 
 /// Module responsible for managing the chat formatting feature.
 public class ChatFormatModule extends AbstractModule {

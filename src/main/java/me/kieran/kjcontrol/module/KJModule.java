@@ -34,6 +34,7 @@ public interface KJModule {
      *
      * @return true if successful, false if the files were invalid.
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean enable();
 
     /**

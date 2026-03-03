@@ -17,6 +17,7 @@ import java.util.List;
  * tasks, such as command registration and dependency configuration, before the
  * standard {@link JavaPlugin} instance is initialised.
  */
+@SuppressWarnings({"unused", "UnstableApiUsage"})
 public class KJControlBootstrap implements PluginBootstrap {
 
     /**
@@ -30,13 +31,14 @@ public class KJControlBootstrap implements PluginBootstrap {
     @Override
     public void bootstrap(BootstrapContext context) {
         // Register the main command tree during the initial command registration event.
-        context.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-            commands.registrar().register(
-                    KJControlCommand.buildKJControlCommand,
+        context.getLifecycleManager().registerEventHandler(
+                LifecycleEvents.COMMANDS,
+                commands -> commands.registrar().register(
+                    KJControlCommand.KJC_COMMAND_NODE,
                     "Main plugin command",
                     List.of("kjc")
-            );
-        });
+                )
+        );
     }
 
     /**

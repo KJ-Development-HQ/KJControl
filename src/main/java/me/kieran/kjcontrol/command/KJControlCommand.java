@@ -12,13 +12,14 @@ import me.kieran.kjcontrol.util.CommandUtil;
  * * This class follows a declarative structure using the Brigadier API to map
  * command syntax to execution handlers defined in utility classes.
  */
+@SuppressWarnings("unused")
 public class KJControlCommand {
 
     /**
      * The immutable command tree for the primary administrative command.
      * Initialised as a static node for registration during the bootstrap phase.
      */
-    public static LiteralCommandNode<CommandSourceStack> buildKJControlCommand = Commands.literal("kjcontrol")
+    public static final LiteralCommandNode<CommandSourceStack> KJC_COMMAND_NODE = Commands.literal("kjcontrol")
 
             // Restricts root command access to users with administrative privileges.
             .requires(sender -> sender.getSender().hasPermission("kjcontrol.admin"))

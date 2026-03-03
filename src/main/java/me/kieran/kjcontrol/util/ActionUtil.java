@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
     Utility class for executing administrative and player-facing actions.
     Acts as the bridge between the command layer and the business logic/UI layers.
  */
+@SuppressWarnings("SameReturnValue")
 public final class ActionUtil {
 
     // Hold a static reference injected at startup

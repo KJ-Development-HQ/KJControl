@@ -5,6 +5,14 @@
 # DO NOT CHANGE VERSION
 version: 1
 
+# What happens when a blacklisted word if found?
+# BLOCK: Cancels the message and warns the player
+# CENSOR: Replaces the blacklisted word with the censor character.
+action: "CENSOR"
+
+# The characters used to replace blacklisted words (e.g., "*", "#", or "-")
+censor-character: "*"
+
 # The message sent to the player when their message contains a blacklisted word.
 # MUST be in MiniMessage formatting.
 cancel-message: "<red><bold>!</bold> Your message was blocked for containing inappropriate language.</red>"

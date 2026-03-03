@@ -19,6 +19,7 @@ import java.util.List;
  * Utility class for handling Brigadier command executions.
  * Contains the core logic for the root command and the dynamic help menu.
  */
+@SuppressWarnings("SameReturnValue")
 public class CommandUtil {
 
     // Private constructor to prevent instantiation of this utility class

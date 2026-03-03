@@ -9,6 +9,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,8 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
 
     private final ChatPipeline pipeline;
 
+    private String action;
+    private String censorChar;
     private Component cancelMessage;
     private Pattern blacklistPattern;
 
@@ -40,6 +43,9 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
 
     @Override
     protected boolean onConfigLoad(FileConfiguration config) {
+        action = config.getString("action", "BLOCK").toUpperCase();
+        censorChar = config.getString("censor-character", "*");
+
         String rawCancelMsg = config.getString("cancel-message", "<red>That language is not allowed.</red>");
         cancelMessage = MiniMessage.miniMessage().deserialize(rawCancelMsg);
 
@@ -47,7 +53,7 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
         List<String> words = config.getStringList("blocked-words");
 
         if (words.isEmpty()) {
-            blacklistPattern = Pattern.compile("(?!)");
+            blacklistPattern = null;
             return true;
         }
 
@@ -57,7 +63,7 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
 
         String regex = strictMatching
                 ? "(?i)(" + joinedWords + ")"
-                : "(?i)\\b(" + joinedWords + ")";
+                : "(?i)\\b(" + joinedWords + ")\\b";
 
         blacklistPattern = Pattern.compile(regex);
 
@@ -76,8 +82,30 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
             return FilterResult.pass();
         }
 
-        if (blacklistPattern.matcher(message).find()) {
-            return FilterResult.fail(cancelMessage);
+        Matcher matcher = blacklistPattern.matcher(message);
+
+        if (action.equals("BLOCK")) {
+            if (matcher.find()) {
+                return FilterResult.fail(cancelMessage);
+            }
+            return FilterResult.pass();
+        }
+
+        if (action.equals("CENSOR")) {
+            boolean wasModified = false;
+            StringBuilder sb = new StringBuilder();
+
+            while (matcher.find()) {
+                wasModified = true;
+
+                String replacement = censorChar.repeat(matcher.group().length());
+                matcher.appendReplacement(sb, replacement);
+            }
+
+            if (wasModified) {
+                matcher.appendTail(sb);
+                return FilterResult.modify(sb.toString());
+            }
         }
 
         return FilterResult.pass();

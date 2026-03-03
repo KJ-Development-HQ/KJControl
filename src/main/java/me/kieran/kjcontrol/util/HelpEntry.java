@@ -14,6 +14,7 @@ package me.kieran.kjcontrol.util;
  * @param permission  the required permission node to view and execute the command,
  *                    or {@code null} if the command is globally accessible.
  */
+@SuppressWarnings("unused")
 public record HelpEntry(
         String command,
         String description,

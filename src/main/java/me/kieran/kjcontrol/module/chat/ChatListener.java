@@ -1,7 +1,6 @@
 package me.kieran.kjcontrol.module.chat;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
-import me.kieran.kjcontrol.module.chat.format.ChatFormatModule;
 import me.kieran.kjcontrol.module.chat.format.ResolvedChatFormat;
 import me.kieran.kjcontrol.module.chat.moderation.FilterResult;
 import me.kieran.kjcontrol.util.PluginMessagesUtil;
