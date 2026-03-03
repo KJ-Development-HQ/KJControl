@@ -3,201 +3,95 @@ package me.kieran.kjcontrol.util;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import me.kieran.kjcontrol.KJControl;
+import me.kieran.kjcontrol.core.KJControl;
 import me.kieran.kjcontrol.menu.KJControlMenu;
-import me.kieran.kjcontrol.record.HelpEntry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
 
+/**
+ * Utility class for handling Brigadier command executions.
+ * Contains the core logic for the root command and the dynamic help menu.
+ */
+@SuppressWarnings("SameReturnValue")
 public class CommandUtil {
 
-    /*
-        Handles the base /kjcontrol command.
+    // Private constructor to prevent instantiation of this utility class
+    private CommandUtil() {}
 
-        This command opens the main KJControl menu
-        for players, or shows an error for console senders.
+    /**
+     * Executes the root "/kjcontrol" command.
+     * Opens the primary administrative GUI for players.
+     * Restricts execution to in-game players, as the console lacks an inventory view.
+     *
+     * @param ctx The Brigadier command context.
+     * @return Command.SINGLE_SUCCESS to indicate successful execution.
      */
     public static int executeMain(CommandContext<CommandSourceStack> ctx) {
-
-        /*
-            Create a new instance of the plugin's main menu.
-
-            This builds an Inventory UI that the player
-            can interact with.
-         */
-        KJControlMenu menu = new KJControlMenu(KJControl.getInstance());
-
-        /*
-            Get the Bukkit CommandSender from Brigadier's
-            CommandSourceStack.
-
-            This allows the same command to be executed
-            by players or the console.
-         */
         CommandSender sender = ctx.getSource().getSender();
 
         /*
-            Only players can open inventories.
-
-            The console has no inventory UI, so we guard against that here.
+            Pattern matching for instanceof (Java 16+)
+            Automatically casts 'sender' to 'player' if the condition is true,
+            eliminating the need for boilerplate casting.
          */
-        if (sender instanceof Player) {
+        if (sender instanceof Player player) {
 
-            /*
-                Cast is safe because of the instanceof check.
-                Open the menu inventory for the player.
-             */
-            ((Player) sender).openInventory(menu.getInventory());
+            // Only instantiate the menu IF the sender is a player.
+            // This prevents wasting memory on GUI creation when console runs the command.
+            KJControl plugin = JavaPlugin.getPlugin(KJControl.class);
+            KJControlMenu menu = new KJControlMenu(plugin);
+            player.openInventory(menu.getInventory());
 
         } else {
-
-            /*
-                If the command is run from console,
-                explain why it doesn't work.
-             */
-            sender.sendMessage("Only players can do this!");
+            // Send formatted error message if executed from the server console
+            Component errorMsg = MiniMessage.miniMessage().deserialize(
+                    "<red>Only players can open the KJControl menu!</red>"
+            );
+            sender.sendMessage(errorMsg);
         }
 
-        /*
-            Brigadier requires a command result.
-            SINGLE_SUCCESS indicates the command ran successfully.
-         */
         return Command.SINGLE_SUCCESS;
     }
 
-    /*
-        Handles /kjcontrol preview.
-
-        This sends the player a preview of the current
-        chat format using their own context.
-     */
-    public static int executePreview(CommandContext<CommandSourceStack> ctx) {
-
-        // Extract the sender from the command context.
-        CommandSender sender = ctx.getSource().getSender();
-
-        /*
-            Only players can preview chat formats,
-            since formatting depends on player data
-            like name, display name, and placeholders.
-         */
-        if (sender instanceof Player)
-
-            /*
-                Generate a formatted chat message using
-                the current chat format configuration.
-
-                The message text here is only visible
-                to the command sender.
-             */
-            sender.sendMessage(
-                    ChatFormatUtil.getFormat(sender, Component.text("Only you can see this preview!"))
-            );
-
-        return Command.SINGLE_SUCCESS;
-    }
-
-    /*
-        Handles /kjcontrol reload
-
-        This reloads all plugin configuration files
-        and provides feedback to the sender.
-     */
-    public static int executeReload(CommandContext<CommandSourceStack> ctx) {
-        // Get the command sender
-        CommandSender sender = ctx.getSource().getSender();
-
-        /*
-            Reload the configuration.
-
-            ConfigUtil handles:
-            - reloading config.yml
-            - reloading feature configs
-            - sending feedback to the sender
-         */
-        ConfigUtil.load(sender);
-        return Command.SINGLE_SUCCESS;
-    }
-
-    /*
-        Handles /kjcontrol help
-
-        Displays a clickable, permission-aware help menu
-        listing all available subcommands.
+    /**
+     * Executes the "/kjcontrol help" subcommand.
+     * Generates and displays a dynamic, permission-aware list of available commands.
+     *
+     * @param ctx The Brigadier command context.
+     * @return Command.SINGLE_SUCCESS to indicate successful execution.
      */
     public static int executeHelp(CommandContext<CommandSourceStack> ctx) {
-        // Get the sender of the command
         CommandSender sender = ctx.getSource().getSender();
-
-        /*
-            Use a basic MiniMessage instance for rendering
-            colours and formatting in the help menu.
-         */
         MiniMessage mm = MiniMessage.miniMessage();
 
-        /*
-            Start building the help message.
+        // 1. Get the original list of all possible help entries
+        List<HelpEntry> entries = HelpUtil.getHelpEntries();
 
-            Component.empty() gives us a clean base
-            to append lines to.
-         */
+        // 2. Filter into a NEW list of entries the user actually has permission for
+        List<HelpEntry> allowedEntries = entries.stream()
+                .filter(entry -> entry.permission() == null || sender.hasPermission(entry.permission()))
+                .toList();
+
+        // 3. Start building the message
         Component message = Component.empty()
                 .append(mm.deserialize("<gray>-------- <green>KJControl Help</green> --------</gray>\n"));
 
-        /*
-            Define the help entries for each subcommand.
+        // 4. Check if the user is missing some commands and add the warning if they are
+        if (allowedEntries.size() < entries.size()) {
+            message = message.append(mm.deserialize(
+                    "<yellow><i>This is only showing you the commands you have permission to use!</i></yellow>\n"
+            ));
+        }
 
-            Each entry includes:
-            - The command
-            - A short description
-            - An optional permission
-         */
-        List<HelpEntry> entries = List.of(
-                new HelpEntry(
-                        "/kjcontrol",
-                        "opens the plugin menu",
-                        "kjcontrol.admin"
-                ),
-                new HelpEntry(
-                        "/kjcontrol preview",
-                        "shows you a preview of the chat format",
-                        "kjcontrol.preview"
-                ),
-                new HelpEntry(
-                        "/kjcontrol reload",
-                        "reloads the plugin files",
-                        "kjcontrol.reload"
-                ),
-                new HelpEntry(
-                        "/kjcontrol help",
-                        "shows this menu",
-                        null
-                )
-        );
-
-        /*
-            Loop through each help entry and render it
-            only if the sender has permission.
-         */
-        for (HelpEntry entry : entries) {
-
-            // Skips commands the sender does not have permission for.
-            if (entry.permission() != null && !sender.hasPermission(entry.permission())) {
-                continue;
-            }
-
-            /*
-                Build a clickable help line.
-
-                Clicking runs the command.
-                Hovering shows extra information.
-             */
+        // 5. Loop through the NEW allowed list to build the lines
+        for (HelpEntry entry : allowedEntries) {
             Component line = mm.deserialize(
                     "<green>" + entry.command() + "</green> <gray>- " + entry.description() + "</gray>"
             ).clickEvent(ClickEvent.runCommand(entry.command()))
@@ -208,17 +102,12 @@ public class CommandUtil {
                                     : "")
                             )
                     ));
-
-            // Append the line and a new line to the message.
             message = message.append(line).append(Component.newline());
         }
 
-        // Add a footer line to close the help menu.
-        message = message.append(
-                mm.deserialize("<gray>-----------------------------------</gray>")
-        );
+        // 6. Close the menu
+        message = message.append(mm.deserialize("<gray>-----------------------------------</gray>"));
 
-        // Send the fully-built help message to the sender.
         sender.sendMessage(message);
         return Command.SINGLE_SUCCESS;
     }

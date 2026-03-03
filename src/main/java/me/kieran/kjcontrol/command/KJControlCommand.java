@@ -1,68 +1,76 @@
 package me.kieran.kjcontrol.command;
 
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import me.kieran.kjcontrol.util.ActionUtil;
 import me.kieran.kjcontrol.util.CommandUtil;
 
-/*
-    Defines and builds the root "/kjcontrol" command and all of its subcommands.
-
-    This class acts purely as a command structure definition:
-    - No execution logic lives here
-    - All behaviour is delegated to CommandUtil
-
-    Using Brigadier allows us to declaratively define permissions,
-    subcommands, and execution paths in a clear, hierarchical way
+/**
+ * Defines the command hierarchy and permission nodes for the "/kjcontrol" root command.
+ * * This class follows a declarative structure using the Brigadier API to map
+ * command syntax to execution handlers defined in utility classes.
  */
+@SuppressWarnings("unused")
 public class KJControlCommand {
 
-    /*
-        Pre-built command tree for "/kjcontrol"
-
-        This is registered during plugin startup and includes:
-        - Root command permission checks
-        - Subcommand definitions
-        - Execution handlers
+    /**
+     * The immutable command tree for the primary administrative command.
+     * Initialised as a static node for registration during the bootstrap phase.
      */
-    public static LiteralCommandNode<CommandSourceStack> buildKJControlCommand = Commands.literal("kjcontrol")
+    public static final LiteralCommandNode<CommandSourceStack> KJC_COMMAND_NODE = Commands.literal("kjcontrol")
 
-            /*
-                Base permission required to access the root command.
-                If this fails, none of the subcommands are accessible
-             */
+            // Restricts root command access to users with administrative privileges.
             .requires(sender -> sender.getSender().hasPermission("kjcontrol.admin"))
 
-            // Executed when "/kjcontrol" is run with no arguments
+            // Default execution path for "/kjcontrol"
             .executes(CommandUtil::executeMain)
 
             /*
-                "/kjcontrol preview"
-
-                Shows the executing player a preview of their
-                current chat format.
+                Subcommand: /kjcontrol preview
+                Triggers a visual representation of the active chat formatting.
              */
             .then(Commands.literal("preview")
                     .requires(sender -> sender.getSender().hasPermission("kjcontrol.preview"))
-                    .executes(CommandUtil::executePreview)
+                    .executes(ActionUtil::preview)
             )
 
             /*
-                "/kjcontrol reload"
+                Subcommand: /kjcontrol config
+                Entry point for configuration management via GUI or targeted arguments.
+             */
+            .then(Commands.literal("config")
+                    .requires(sender -> sender.getSender().hasPermission("kjcontrol.config"))
+                    .executes(ActionUtil::editConfig)
 
-                Reloads configuration and cached data without
-                restarting the server.
+                    // Logic branch for toggling the chat format module
+                    .then(Commands.literal("chat-format-enabled")
+                            .then(Commands.argument("state", BoolArgumentType.bool())
+                                    .executes(ActionUtil::setChatFormatEnabled)
+                            )
+                    )
+
+                    // Logic branch for toggling general message systems.
+                    .then(Commands.literal("messages-enabled")
+                            .then(Commands.argument("state", BoolArgumentType.bool())
+                                    .executes(ActionUtil::setMessagesEnabled)
+                            )
+                    )
+            )
+
+            /*
+                Subcommand: /kjcontrol reload
+                Invalidates caches and reloads configuration files from disk.
              */
             .then(Commands.literal("reload")
                     .requires(sender -> sender.getSender().hasPermission("kjcontrol.reload"))
-                    .executes(CommandUtil::executeReload)
+                    .executes(ActionUtil::reload)
             )
 
             /*
-                "/kjcontrol help"
-
-                Displays available subcommands and descriptions.
-                Inherits the root permission requirement.
+                Subcommand: /kjcontrol help
+                Generates a permission-aware help menu.
              */
             .then(Commands.literal("help")
                     .executes(CommandUtil::executeHelp)

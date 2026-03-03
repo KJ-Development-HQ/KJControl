@@ -1,0 +1,35 @@
+
+# -----------------------------------------------
+# - Supports PlaceholderAPI
+# - Formatting MUST be in MiniMessage.
+# - Internal placeholders:
+#   - <username>
+#   - <displayname>
+#
+# MiniMessage: https://docs.papermc.io/adventure/minimessage/format/
+# PlaceholderAPI: https://wiki.placeholderapi.com/
+# -----------------------------------------------
+
+# DO NOT CHANGE VERSION
+version: 2
+
+# -----------------------------------------------
+# Permission-Based Join & Quit Messages
+# -----------------------------------------------
+# The plugin checks these lists from TOP to BOTTOM.
+# If a player has multiple permissions, the FIRST one they match will be used.
+# If a player has no permissions, default will be used.
+#
+# Permission format: kjcontrol.join.<key>
+# Example: To give a player the owner message, give them 'kjcontrol.join.owner'
+
+join-messages:
+  owner: "<bold><green>+</green> <dark_purple>The boss, <username>, has arrived!</dark_purple></bold>"
+  vip: "<green>+</green> <gold><username> joined the server!</gold>"
+  default: "<green>+</green> <gold><username></gold>"
+
+# Permission format: kjcontrol.quit.<key>
+quit-messages:
+  owner: "<bold><red>-</red> <dark_purple>The boss, <username>, has left.</dark_purple></bold>"
+  vip: "<red>-</red> <gold><username> left the server!</gold>"
+  default: "<red>-</red> <gold><username></gold>"

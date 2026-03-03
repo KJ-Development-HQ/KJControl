@@ -1,0 +1,16 @@
+# ----------------------------------------------------------------------
+# Link Filter Configuration
+# ----------------------------------------------------------------------
+
+# DO NOT CHANGE VERSION
+version: 1
+
+# The message sent to the player when they try to send an unapproved link.
+# MUST be in MiniMessage formatting.
+cancel-message: "<red><bold>!</bold> Advertising or sending unapproved links is not allowed.</red>"
+
+# A list of domains that are permitted to be sent in chat.
+# Do not include 'https://' or 'www.', just the base domain.
+allowed-domains:
+  - "myserver.com"
+  - "myserver2.com"

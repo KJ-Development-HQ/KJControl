@@ -11,7 +11,7 @@
 # -----------------------------------------------
 
 # DO NOT CHANGE VERSION
-chat-format-version: 1
+version: 2
 
 # This will change the format of chat messages.
 format:
