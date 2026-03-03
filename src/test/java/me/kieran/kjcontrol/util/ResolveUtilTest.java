@@ -5,7 +5,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.PluginManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,17 +28,23 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ResolveUtilTest {
 
-    private ServerMock server;
     private PlayerMock player;
     private MockedStatic<PlaceholderAPI> papiMock;
+    private MockedStatic<Bukkit> bukkitMock;
 
     @BeforeEach
     void setUp() {
-        server = MockBukkit.mock();
+        ServerMock server = MockBukkit.mock();
 
         // Create a player and explicitly set their display name for testing
         player = server.addPlayer("Kieran");
         player.displayName(Component.text("Admin_Kieran"));
+
+        PluginManager pmSpy = Mockito.spy(server.getPluginManager());
+        Mockito.doReturn(true).when(pmSpy).isPluginEnabled("PlaceholderAPI");
+
+        bukkitMock = Mockito.mockStatic(Bukkit.class, Mockito.CALLS_REAL_METHODS);
+        bukkitMock.when(Bukkit::getPluginManager).thenReturn(pmSpy);
 
         // Mock PlaceholderAPI to actually replace a specific dummy variable
         papiMock = Mockito.mockStatic(PlaceholderAPI.class);
@@ -50,9 +58,8 @@ class ResolveUtilTest {
 
     @AfterEach
     void tearDown() {
-        if (papiMock != null) {
-            papiMock.close();
-        }
+        if (papiMock != null) { papiMock.close(); }
+        if (bukkitMock != null) bukkitMock.close();
         MockBukkit.unmock();
     }
 

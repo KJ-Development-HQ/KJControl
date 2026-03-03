@@ -5,7 +5,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.PluginManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,14 +26,20 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ChatFormatTest {
 
-    private ServerMock server;
     private PlayerMock player;
     private MockedStatic<PlaceholderAPI> papiMock;
+    private MockedStatic<Bukkit> bukkitMock;
 
     @BeforeEach
     void setUp() {
-        server = MockBukkit.mock();
+        ServerMock server = MockBukkit.mock();
         player = server.addPlayer("Kieran");
+
+        PluginManager pmSpy = Mockito.spy(server.getPluginManager());
+        Mockito.doReturn(true).when(pmSpy).isPluginEnabled("PlaceholderAPI");
+
+        bukkitMock = Mockito.mockStatic(Bukkit.class, Mockito.CALLS_REAL_METHODS);
+        bukkitMock.when(Bukkit::getPluginManager).thenReturn(pmSpy);
 
         papiMock = Mockito.mockStatic(PlaceholderAPI.class);
         papiMock.when(() -> PlaceholderAPI.setPlaceholders(Mockito.any(Player.class), Mockito.anyString()))
@@ -44,6 +52,7 @@ class ChatFormatTest {
     @AfterEach
     void tearDown() {
         if (papiMock != null) papiMock.close();
+        if (bukkitMock != null) bukkitMock.close();
         MockBukkit.unmock();
     }
 
