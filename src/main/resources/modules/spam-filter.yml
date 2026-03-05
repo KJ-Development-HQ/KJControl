@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 # DO NOT CHANGE VERSION
-version: 1
+version: 2
 
 # The amount of time (in seconds) a player must wait between sending messages.
 message-cooldown-seconds: 2.0
@@ -13,3 +13,6 @@ message-cooldown-seconds: 2.0
 # OPTIONAL PLACEHOLDER:
 # <remaining> - The amount of time left (in seconds) before the player can speak again. E.g. "2.0"
 cancel-message: "<red><bold>!</bold> Please wait <remaining>s before chatting again.</red>"
+
+database-logging:
+  log-infractions: true

@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 # DO NOT CHANGE VERSION
-version: 1
+version: 2
 
 # The message sent to the player when they try to send an unapproved link.
 # MUST be in MiniMessage formatting.
@@ -14,3 +14,6 @@ cancel-message: "<red><bold>!</bold> Advertising or sending unapproved links is 
 allowed-domains:
   - "myserver.com"
   - "myserver2.com"
+
+database-logging:
+  log-infractions: true

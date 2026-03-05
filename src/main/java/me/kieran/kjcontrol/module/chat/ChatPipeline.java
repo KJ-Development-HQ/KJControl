@@ -57,6 +57,7 @@ public class ChatPipeline {
     public FilterResult runFilters(Player player, String initialMessage) {
         String currentMessage = initialMessage;
         boolean wasModified = false;
+        String triggeringModule = null;
 
         for (ChatFilter filter : activeFilters) {
 
@@ -75,11 +76,14 @@ public class ChatPipeline {
             if (result.modifiedMessage() != null) {
                 currentMessage = result.modifiedMessage();
                 wasModified = true;
+                if (triggeringModule == null) {
+                    triggeringModule = result.moduleName();
+                }
             }
         }
 
         // Return the modified string if changes occurred, otherwise standard pass
-        return wasModified ? FilterResult.modify(currentMessage) : FilterResult.pass();
+        return wasModified ? FilterResult.modify(currentMessage, triggeringModule) : FilterResult.pass();
     }
 
     /*

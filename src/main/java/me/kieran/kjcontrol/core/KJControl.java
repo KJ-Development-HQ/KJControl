@@ -1,5 +1,10 @@
 package me.kieran.kjcontrol.core;
 
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import me.kieran.kjcontrol.command.KJControlCommand;
+import me.kieran.kjcontrol.database.DatabaseCleanupTask;
+import me.kieran.kjcontrol.database.DatabaseManager;
+import me.kieran.kjcontrol.database.LogRepository;
 import me.kieran.kjcontrol.module.chat.ChatListener;
 import me.kieran.kjcontrol.menu.InventoryListener;
 import me.kieran.kjcontrol.module.KJModule;
@@ -9,8 +14,9 @@ import me.kieran.kjcontrol.module.chat.moderation.BlacklistModule;
 import me.kieran.kjcontrol.module.chat.moderation.CapsModule;
 import me.kieran.kjcontrol.module.chat.moderation.LinkModule;
 import me.kieran.kjcontrol.module.chat.moderation.SpamModule;
-import me.kieran.kjcontrol.module.messages.MessagesModule;
+import me.kieran.kjcontrol.module.message.MessagesModule;
 import me.kieran.kjcontrol.util.ActionUtil;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,6 +29,9 @@ import java.util.List;
 public class KJControl extends JavaPlugin {
 
     private ConfigManager configManager;
+    private DatabaseManager dbManager;
+    private ComponentLogger logger;
+    private LogRepository logRepository;
 
     /**
      * Logic executed when the plugin is enabled by the server.
@@ -30,6 +39,33 @@ public class KJControl extends JavaPlugin {
      */
     @Override
     public void onEnable() {
+
+        // Connect to SQLite
+        dbManager = new DatabaseManager(this);
+        dbManager.connect();
+        logRepository = new LogRepository(this, dbManager);
+
+        getLifecycleManager().registerEventHandler(
+                LifecycleEvents.COMMANDS,
+                commands -> commands.registrar().register(
+                        KJControlCommand.build(this),
+                        "Main plugin command",
+                        List.of("kjc")
+                )
+        );
+
+        /*
+            Schedule the auto-clean-up task
+            Delay: 1 minute (1200 ticks) after startup
+            Period: Every 12 hours (864000 ticks)
+         */
+        getServer().getScheduler().runTaskTimerAsynchronously(
+                this,
+                new DatabaseCleanupTask(this),
+                20L * 60,
+                20L * 60 * 60 * 12
+        );
+
         configManager = new ConfigManager(this);
         ChatPipeline pipeline = new ChatPipeline();
 
@@ -46,7 +82,7 @@ public class KJControl extends JavaPlugin {
         ActionUtil.init(this);
 
         // Log initialisation status of modules using Paper's ComponentLogger
-        var logger = getComponentLogger();
+        logger = getComponentLogger();
         long enabledCount = configManager.getModules().stream().filter(KJModule::isEnabled).count();
         logger.info("Successfully loaded {}/{} modules:", enabledCount, configManager.getModules().size());
 
@@ -58,9 +94,16 @@ public class KJControl extends JavaPlugin {
         // Register event handlers to the server's PluginManager.
         var pluginManager = getServer().getPluginManager();
         List.of(
-                new ChatListener(pipeline),
+                new ChatListener(this, pipeline),
                 new InventoryListener(configManager)
         ).forEach(listener -> pluginManager.registerEvents(listener, this));
+
+        logger.info("This is where the fun begins!");
+    }
+
+    public void onDisable() {
+        dbManager.disconnect();
+        logger.info("That's all, folks!");
     }
 
     /**
@@ -70,6 +113,10 @@ public class KJControl extends JavaPlugin {
      */
     public ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public LogRepository getLogRepository() {
+        return logRepository;
     }
 
 }

@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 # DO NOT CHANGE VERSION
-version: 1
+version: 2
 
 # What happens when a blacklisted word if found?
 # BLOCK: Cancels the message and warns the player
@@ -27,3 +27,6 @@ blocked-words:
   - "badword1"
   - "badword2"
   - "some blacklisted phrase"
+
+database-logging:
+  log-infractions: true

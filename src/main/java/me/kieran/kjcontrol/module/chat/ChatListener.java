@@ -1,6 +1,7 @@
 package me.kieran.kjcontrol.module.chat;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
+import me.kieran.kjcontrol.core.KJControl;
 import me.kieran.kjcontrol.module.chat.format.ResolvedChatFormat;
 import me.kieran.kjcontrol.module.chat.moderation.FilterResult;
 import me.kieran.kjcontrol.util.PluginMessagesUtil;
@@ -17,14 +18,17 @@ import org.bukkit.event.Listener;
  */
 public class ChatListener implements Listener {
 
+    private final KJControl plugin;
     private final ChatPipeline pipeline;
 
     /**
      * Constructs the listener with required dependencies.
      *
+     * @param plugin   The main plugin instance for accessing repositories.
      * @param pipeline The active {@link ChatPipeline}.
      */
-    public ChatListener(ChatPipeline pipeline) {
+    public ChatListener(KJControl plugin, ChatPipeline pipeline) {
+        this.plugin = plugin;
         this.pipeline = pipeline;
     }
 
@@ -36,13 +40,34 @@ public class ChatListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onChat(AsyncChatEvent event) {
+        Player player = event.getPlayer();
+        String rawMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
+
+        // Fire the raw message to the database asynchronously before any mutations occur.
+        if (plugin.getLogRepository() != null && !player.hasPermission("kjcontrol.bypass.logging")) {
+            plugin.getLogRepository().logChat(player.getUniqueId(), player.getName(), rawMessage)
+                    .exceptionally(throwable -> {
+                        plugin.getComponentLogger().error("Async database thread rejected chat log task!", throwable);
+                        return null;
+                    });
+        }
 
         // If NO chat modules are enabled, yield immediately to vanilla Bukkit
         if (!pipeline.isActive()) return;
 
-        Player player = event.getPlayer();
-        String rawMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
         FilterResult result = pipeline.runFilters(player, rawMessage);
+
+        if (result.moduleName() != null &&
+                plugin.getLogRepository() != null &&
+                !player.hasPermission("kjcontrol.bypass.logging")
+        ) {
+            plugin.getLogRepository()
+                    .logInfraction(player.getUniqueId(), player.getName(), result.moduleName(), rawMessage)
+                    .exceptionally(throwable -> {
+                        plugin.getComponentLogger().error("Async database thread rejected infraction log task!", throwable);
+                        return null;
+                    });
+        }
 
         // If a filter blocked the message, cancel the event and warn the player.
         if (result.isCancelled()) {

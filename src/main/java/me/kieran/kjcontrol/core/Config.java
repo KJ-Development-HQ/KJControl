@@ -13,7 +13,7 @@ public final class Config {
      * The expected schema version of config.yml.
      * Used to detect outdated configurations that may lack new feature keys.
      */
-    private static final int LATEST_CONFIG_VERSION = 2;
+    private static final int LATEST_CONFIG_VERSION = 3;
 
     // Private constructor to prevent instantiation of this static utility class
     private Config() {}

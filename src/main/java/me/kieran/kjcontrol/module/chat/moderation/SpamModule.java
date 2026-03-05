@@ -28,6 +28,7 @@ public class SpamModule extends AbstractModule implements ChatFilter {
     // Cached configuration values
     private long cooldownMs;
     private String rawCancelMsg;
+    private boolean logInfractions;
 
     // Thread-safe cache to track the exact millisecond a player last sent a message
     private final Map<UUID, Long> lastMessagesTimes = new ConcurrentHashMap<>();
@@ -36,7 +37,7 @@ public class SpamModule extends AbstractModule implements ChatFilter {
     private Listener cleanupListener;
 
     public SpamModule(KJControl plugin, ChatPipeline pipeline) {
-        super(plugin, "Spam Filter", "features.moderation.spam-filter", "modules/spam-filter.yml", 1);
+        super(plugin, "Spam Filter", "features.moderation.spam-filter", "modules/spam-filter.yml", 2);
         this.pipeline = pipeline;
     }
 
@@ -70,6 +71,7 @@ public class SpamModule extends AbstractModule implements ChatFilter {
         cooldownMs = (long) (seconds * 1000);
 
         rawCancelMsg = config.getString("cancel-message", "<red>Please wait <remaining>s before typing again!</red>");
+        logInfractions = config.getBoolean("database-logging.log-infractions", false);
 
         return true;
     }
@@ -85,6 +87,8 @@ public class SpamModule extends AbstractModule implements ChatFilter {
         UUID uuid = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
 
+        String logName = logInfractions ? getName() : null;
+
         if (lastMessagesTimes.containsKey(uuid)) {
             long lastTime = lastMessagesTimes.get(uuid);
             long timeSinceLastMessage = currentTime - lastTime;
@@ -96,7 +100,7 @@ public class SpamModule extends AbstractModule implements ChatFilter {
                         rawCancelMsg,
                         Placeholder.unparsed("remaining", formattedTime)
                 );
-                return FilterResult.fail(dynamicCancelMsg);
+                return FilterResult.fail(dynamicCancelMsg, logName);
             }
         }
 

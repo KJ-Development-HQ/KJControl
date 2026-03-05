@@ -18,9 +18,10 @@ public class CapsModule extends AbstractModule implements ChatFilter {
     private int maxCapsPercentage;
     private Component cancelMessage;
     private String action;
+    private boolean logInfractions;
 
     public CapsModule(KJControl plugin, ChatPipeline pipeline) {
-        super(plugin, "Caps Filter", "features.moderation.caps-filter", "modules/caps-filter.yml", 1);
+        super(plugin, "Caps Filter", "features.moderation.caps-filter", "modules/caps-filter.yml", 2);
         this.pipeline = pipeline;
     }
 
@@ -42,6 +43,8 @@ public class CapsModule extends AbstractModule implements ChatFilter {
 
         String rawCancelMsg = config.getString("cancel-message", "<red>Too many caps!</red>");
         cancelMessage = MiniMessage.miniMessage().deserialize(rawCancelMsg);
+
+        logInfractions = config.getBoolean("database-logging.log-infractions", false);
 
         return true;
     }
@@ -68,10 +71,11 @@ public class CapsModule extends AbstractModule implements ChatFilter {
 
         // Block or pass based on the configured tolerance
         if (percentage > maxCapsPercentage) {
+            String logName = logInfractions ? getName() : null;
             if (action.equals("LOWERCASE")) {
-                return FilterResult.modify(message.toLowerCase());
+                return FilterResult.modify(message.toLowerCase(), logName);
             } else {
-                return FilterResult.fail(cancelMessage);
+                return FilterResult.fail(cancelMessage, logName);
             }
         }
 

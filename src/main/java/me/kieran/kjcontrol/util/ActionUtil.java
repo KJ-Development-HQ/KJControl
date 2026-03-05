@@ -6,8 +6,11 @@ import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import me.kieran.kjcontrol.core.KJControl;
 import me.kieran.kjcontrol.core.ConfigManager;
+import me.kieran.kjcontrol.database.model.ChatLog;
+import me.kieran.kjcontrol.database.model.InfractionLog;
 import me.kieran.kjcontrol.menu.ConfigMenu;
 import me.kieran.kjcontrol.module.KJModule;
+import me.kieran.kjcontrol.module.chat.ChatListener;
 import me.kieran.kjcontrol.module.chat.format.ChatFormatModule;
 import me.kieran.kjcontrol.module.chat.format.ResolvedChatFormat;
 import net.kyori.adventure.text.Component;
@@ -144,52 +147,90 @@ public final class ActionUtil {
 
     /*
         ----------------------------------------------------------------------
-        Dynamic Module Toggling
+        Database Actions
         ----------------------------------------------------------------------
      */
 
-    /**
-        A unified handler for toggling boolean configuration settings.
-        Dynamically resolves the target module and handles redundant state checks.
+    public static int lookupPlayer(CommandContext<CommandSourceStack> ctx) {
+        String playerName = ctx.getArgument("player", String.class);
+        CommandSender sender = ctx.getSource().getSender();
 
-        @param sender        The command executor.
-        @param moduleName    The registered name of the module.
-        @param isPlural      Determines if the linking verb should be "are" instead of "is".
-        @param targetState   The desired boolean state.
-     */
-    private static void handleToggle(CommandSender sender, String moduleName, boolean isPlural, boolean targetState) {
-        KJModule module = getConfigManager().getModule(moduleName);
+        sender.sendRichMessage("<gray>Fetching chat logs for <yellow>" + playerName + "</yellow>...</gray>");
 
-        if (module == null) {
-            sender.sendMessage(PluginMessagesUtil.format(MiniMessage.miniMessage().deserialize(
-                    "<red>Error: Module %s is not registered.</red>".formatted(moduleName)
-            )));
-            return;
-        }
+        plugin.getLogRepository().getChatLogs(playerName, null).thenAccept(logs -> {
+            if (logs.isEmpty()) {
+                sender.sendRichMessage("<red>No chat logs found for that player.</red>");
+                return;
+            }
+            sender.sendRichMessage("<gold>--- Chat Logs: " + playerName + " ---</gold>");
+            for (ChatLog log : logs) {
+                sender.sendRichMessage("<dark_gray>[" + log.timestamp() + "]</dark_gray> <white>" + log.message() + "</white>");
+            }
+        });
 
-        if (targetState == module.isEnabled()) {
-            String status = targetState ? "enabled" : "disabled";
-            String verb = isPlural ? "are" : "is";
-
-            String errorMessage = "<red>%s %s already %s!</red>".formatted(moduleName, verb, status);
-            sender.sendMessage(PluginMessagesUtil.format(MiniMessage.miniMessage().deserialize(errorMessage)));
-            return;
-        }
-
-        getConfigManager().setModuleState(moduleName, targetState, sender);
-    }
-
-    // Handles the logic for the "chat-format-enabled" command branch
-    public static int setChatFormatEnabled(CommandContext<CommandSourceStack> ctx) {
-        boolean state = BoolArgumentType.getBool(ctx, "state");
-        handleToggle(ctx.getSource().getSender(), "Chat Format", false, state);
         return Command.SINGLE_SUCCESS;
     }
 
-    // Handles the logic for the "messages-enabled" command branch
-    public static int setMessagesEnabled(CommandContext<CommandSourceStack> ctx) {
-        boolean state = BoolArgumentType.getBool(ctx, "state");
-        handleToggle(ctx.getSource().getSender(), "Messages", true, state);
+    public static int lookupPlayerTime(CommandContext<CommandSourceStack> ctx) {
+        String playerName = ctx.getArgument("player", String.class);
+        long timeInMs = ctx.getArgument("time", Long.class);
+        CommandSender sender = ctx.getSource().getSender();
+
+        sender.sendRichMessage("<gray>Fetching recent chat logs for <yellow>" + playerName + "</yellow>...</gray>");
+
+        plugin.getLogRepository().getChatLogs(playerName, timeInMs).thenAccept(logs -> {
+            if (logs.isEmpty()) {
+                sender.sendRichMessage("<red>No recent chat logs found for that player.</red>");
+                return;
+            }
+            sender.sendRichMessage("<gold>--- Recent Chat Logs: " + playerName + " ---</gold>");
+            for (ChatLog log : logs) {
+                sender.sendRichMessage("<dark_gray>[" + log.timestamp() + "]</dark_gray> <white>" + log.message() + "</white>");
+            }
+        });
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public static int violationsTime(CommandContext<CommandSourceStack> ctx) {
+        long timeInMs = ctx.getArgument("time", Long.class);
+        CommandSender sender = ctx.getSource().getSender();
+
+        plugin.getLogRepository().getInfractions(null, timeInMs).thenAccept(logs -> {
+            if (logs.isEmpty()) {
+                sender.sendRichMessage("<green>No recent infractions found.</green>");
+                return;
+            }
+            sender.sendRichMessage("<red>--- Recent Violations ---</red>");
+            for (InfractionLog log : logs) {
+                sender.sendRichMessage(
+                        "<dark_gray>[" + log.timestamp() + "]</dark_gray> <yellow>" + log.playerName() +
+                                "</yellow> <gray>(<red>" + log.moduleName() +
+                                "</red>):</gray> <white>" + log.message() + "</white>"
+                );
+            }
+        });
+
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public static int violationsPlayer(CommandContext<CommandSourceStack> ctx) {
+        String playerName = ctx.getArgument("player", String.class);
+        CommandSender sender = ctx.getSource().getSender();
+
+        plugin.getLogRepository().getInfractions(playerName, null).thenAccept(logs -> {
+           if (logs.isEmpty()) {
+               sender.sendRichMessage("<green>No infractions found for that player.</green>");
+               return;
+           }
+           sender.sendRichMessage("<red>--- Violations: " + playerName + " ---</red>");
+           for (InfractionLog log : logs) {
+               sender.sendRichMessage("<dark_gray>[" + log.timestamp() + "]</dark_gray> <gray>(<red>" +
+                       log.moduleName() + "</red>):</gray> <white>" + log.message() + "</white>"
+               );
+           }
+        });
+
         return Command.SINGLE_SUCCESS;
     }
 

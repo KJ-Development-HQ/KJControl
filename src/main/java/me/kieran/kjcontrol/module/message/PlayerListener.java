@@ -1,4 +1,4 @@
-package me.kieran.kjcontrol.module.messages;
+package me.kieran.kjcontrol.module.message;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;

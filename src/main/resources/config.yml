@@ -1,5 +1,5 @@
 # DO NOT CHANGE VERSION
-config-version: 2
+config-version: 3
 
 # The prefix added before plugin messages sent to players.
 # Formatting MUST be in MiniMessage.
@@ -35,3 +35,17 @@ features:
     # Whether messages get blocked based on your custom blacklist.
     # Configure in modules/blacklist.yml
     blacklist: true
+
+database:
+
+  # Currently only sqlite is supported, but mysql is coming!
+  type: sqlite
+
+  auto-cleanup:
+
+    # Whether logs are cleared when they reach a certain age.
+    # Configure individual filter logging in its own modules/ file.
+    enabled: true
+
+    # How many days old should logs be before they are permanently deleted?
+    max-age-days: 30

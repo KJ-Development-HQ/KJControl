@@ -141,30 +141,4 @@ class ActionUtilTest {
         assertInstanceOf(ConfigMenu.class, holder, "The opened GUI was not the ConfigMenu.");
     }
 
-    @Test
-    @DisplayName("Brigadier wrapper should correctly toggle chat format and block redundant toggles")
-    void testBrigadierToggleChat() {
-        PlayerMock player = server.addPlayer();
-        KJModule chatModule = plugin.getConfigManager().getModule("Chat Format");
-        plugin.getConfigManager().setModuleState("Chat Format", false, null);
-
-        // Create a fake Brigadier context running "/kjc config chat-format-enabled true"
-        try (MockedStatic<BoolArgumentType> boolArgMock = Mockito.mockStatic(BoolArgumentType.class)) {
-            CommandContext<CommandSourceStack> ctx = createMockContext(player, true);
-            boolArgMock.when(() -> BoolArgumentType.getBool(ctx, "state")).thenReturn(true);
-
-            // Execute the command
-            int result = ActionUtil.setChatFormatEnabled(ctx);
-
-            // Verify success response code and actual state change
-            assertEquals(Command.SINGLE_SUCCESS, result);
-            assertTrue(chatModule.isEnabled(), "Module registry should reflect the enabled state.");
-            assertReceived(player, "KJControl » Chat Format Enabled!");
-
-            // Try to run it again (Testing the redundant toggle block)
-            ActionUtil.setChatFormatEnabled(ctx);
-            assertReceived(player, "KJControl » Chat Format is already enabled!");
-        }
-    }
-
 }

@@ -25,9 +25,10 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
     private String censorChar;
     private Component cancelMessage;
     private Pattern blacklistPattern;
+    private boolean logInfractions;
 
     public BlacklistModule(KJControl plugin, ChatPipeline pipeline) {
-        super(plugin, "Blacklist Filter", "features.moderation.blacklist", "modules/blacklist.yml", 1);
+        super(plugin, "Blacklist", "features.moderation.blacklist", "modules/blacklist.yml", 2);
         this.pipeline = pipeline;
     }
 
@@ -48,6 +49,8 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
 
         String rawCancelMsg = config.getString("cancel-message", "<red>That language is not allowed.</red>");
         cancelMessage = MiniMessage.miniMessage().deserialize(rawCancelMsg);
+
+        logInfractions = config.getBoolean("database-logging.log-infractions", false);
 
         boolean strictMatching = config.getBoolean("strict-matching", false);
         List<String> words = config.getStringList("blocked-words");
@@ -83,10 +86,11 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
         }
 
         Matcher matcher = blacklistPattern.matcher(message);
+        String logName = logInfractions ? getName() : null;
 
         if (action.equals("BLOCK")) {
             if (matcher.find()) {
-                return FilterResult.fail(cancelMessage);
+                return FilterResult.fail(cancelMessage, logName);
             }
             return FilterResult.pass();
         }
@@ -104,7 +108,7 @@ public class BlacklistModule extends AbstractModule implements ChatFilter {
 
             if (wasModified) {
                 matcher.appendTail(sb);
-                return FilterResult.modify(sb.toString());
+                return FilterResult.modify(sb.toString(), logName);
             }
         }
 

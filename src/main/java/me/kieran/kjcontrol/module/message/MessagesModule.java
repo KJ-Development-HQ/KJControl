@@ -1,4 +1,4 @@
-package me.kieran.kjcontrol.module.messages;
+package me.kieran.kjcontrol.module.message;
 
 import me.kieran.kjcontrol.core.KJControl;
 import me.kieran.kjcontrol.module.AbstractModule;

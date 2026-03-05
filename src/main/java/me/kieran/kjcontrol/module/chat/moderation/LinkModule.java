@@ -34,9 +34,10 @@ public class LinkModule extends AbstractModule implements ChatFilter {
     private final ChatPipeline pipeline;
     private Component cancelMessage;
     private final Set<String> allowedDomains = new HashSet<>();
+    private boolean logInfractions;
 
     public LinkModule(KJControl plugin, ChatPipeline pipeline) {
-        super(plugin, "Link Filter", "features.moderation.link-filter", "modules/link-filter.yml", 1);
+        super(plugin, "Link Filter", "features.moderation.link-filter", "modules/link-filter.yml", 2);
         this.pipeline = pipeline;
     }
 
@@ -56,6 +57,8 @@ public class LinkModule extends AbstractModule implements ChatFilter {
         String rawCancelMsg = config.getString("cancel-message", "<red>Sending links is not allowed.</red>");
         cancelMessage = MiniMessage.miniMessage().deserialize(rawCancelMsg);
 
+        logInfractions = config.getBoolean("database-logging.log-infractions", false);
+
         allowedDomains.clear();
         List<String> domains = config.getStringList("allowed-domains");
         for (String domain : domains) {
@@ -73,11 +76,12 @@ public class LinkModule extends AbstractModule implements ChatFilter {
     @Override
     public FilterResult check(Player player, String message) {
         Matcher matcher = URL_PATTERN.matcher(message);
+        String logName = logInfractions ? getName() : null;
 
         while (matcher.find()) {
             String domain = matcher.group(1).toLowerCase();
             if (!allowedDomains.contains(domain)) {
-                return FilterResult.fail(cancelMessage);
+                return FilterResult.fail(cancelMessage, logName);
             }
         }
 
